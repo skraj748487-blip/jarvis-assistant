@@ -3,8 +3,8 @@ package com.jarvis.assistant;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,8 +21,10 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends Activity {
 
@@ -30,7 +32,30 @@ public class MainActivity extends Activity {
     private SpeechRecognizer speechRecognizer;
     private TextView statusText;
     private ImageView micButton;
-    private boolean isFlashOn = false;
+    private static final Map<String, String> HINDI_APP_MAP = new HashMap<>();
+
+    static {
+        HINDI_APP_MAP.put("फाइल", "file");
+        HINDI_APP_MAP.put("फ़ाइल", "file");
+        HINDI_APP_MAP.put("कैलकुलेटर", "calculator");
+        HINDI_APP_MAP.put("कैलेंडर", "calendar");
+        HINDI_APP_MAP.put("घड़ी", "clock");
+        HINDI_APP_MAP.put("अलार्म", "clock");
+        HINDI_APP_MAP.put("मैसेज", "message");
+        HINDI_APP_MAP.put("संदेश", "message");
+        HINDI_APP_MAP.put("कांटेक्ट", "contact");
+        HINDI_APP_MAP.put("कॉन्टैक्ट", "contact");
+        HINDI_APP_MAP.put("फोन", "phone");
+        HINDI_APP_MAP.put("फ़ोन", "phone");
+        HINDI_APP_MAP.put("कॉल", "phone");
+        HINDI_APP_MAP.put("प्ले स्टोर", "play store");
+        HINDI_APP_MAP.put("मैप", "maps");
+        HINDI_APP_MAP.put("नक्शा", "maps");
+        HINDI_APP_MAP.put("गाना", "music");
+        HINDI_APP_MAP.put("म्यूजिक", "music");
+        HINDI_APP_MAP.put("रिकॉर्डर", "recorder");
+        HINDI_APP_MAP.put("नोट्स", "notes");
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,12 +107,12 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. सवाल-जवाब (Smart Conversation)
+        // 1. बातचीत और परिचय
         if (cmd.contains("हेलो") || cmd.contains("hello") || cmd.contains("हाय") || cmd.equals("जार्विस")) {
             speakOut("नमस्ते साहिल सर, बताइए क्या हुक्म है?");
             return;
         }
-        if (cmd.contains("नाम क्या है") || cmd.contains("who are you") || cmd.contains("कौन हो")) {
+        if (cmd.contains("नाम क्या है") || cmd.contains("कौन हो") || cmd.contains("who are you")) {
             speakOut("मैं जार्विस हूँ, आपका पर्सनल वॉइस असिस्टेंट।");
             return;
         }
@@ -102,28 +127,20 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 2. फ़ाइल मैनेजर (Files / My Files / File Manager)
-        if (cmd.contains("फाइल") || cmd.contains("फ़ाइल") || cmd.contains("file")) {
-            speakOut("फ़ाइल मैनेजर खोल रहा हूँ, सर।");
-            if (!launchPackageIfExists("com.google.android.documentsui")) {
-                if (!launchPackageIfExists("com.google.android.apps.nbu.files")) {
-                    if (!launchPackageIfExists("com.oneplus.filemanager")) {
-                        launchAnyAppByName("file");
-                    }
-                }
-            }
+        // 2. टॉर्च कंट्रोल
+        if (cmd.contains("टॉर्च") || cmd.contains("फ्लैश") || cmd.contains("torch") || cmd.contains("flashlight")) {
+            boolean turnOn = !cmd.contains("बंद") && !cmd.contains("off");
+            toggleFlashlight(turnOn);
+            speakOut(turnOn ? "टॉर्च चालू कर दी गई है।" : "टॉर्च बंद कर दी गई है।");
             return;
         }
 
-        // 3. टॉर्च / फ़्लैशलाइट
-        if (cmd.contains("टॉर्च") || cmd.contains("फ्लैश") || cmd.contains("torch") || cmd.contains("flashlight")) {
-            if (cmd.contains("बंद") || cmd.contains("off")) {
-                toggleFlashlight(false);
-                speakOut("टॉर्च बंद कर दी गई है।");
-            } else {
-                toggleFlashlight(true);
-                speakOut("टॉर्च चालू कर दी गई है।");
-            }
+        // 3. फ़ोन डायलर
+        if (cmd.contains("फोन") || cmd.contains("फ़ोन") || cmd.contains("phone") || cmd.contains("डायलर") || cmd.contains("कॉल")) {
+            speakOut("फ़ोन डायलर खोल रहा हूँ, सर।");
+            Intent dialIntent = new Intent(Intent.ACTION_DIAL);
+            dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(dialIntent);
             return;
         }
 
@@ -136,32 +153,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 5. फ़ोन डायलर
-        if (cmd.contains("फोन") || cmd.contains("फ़ोन") || cmd.contains("phone") || cmd.contains("कॉल") || cmd.contains("call") || cmd.contains("डायलर")) {
-            speakOut("फ़ोन डायलर खोल रहा हूँ, सर।");
-            Intent dialIntent = new Intent(Intent.ACTION_DIAL);
-            dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(dialIntent);
-            return;
-        }
-
-        // 6. अलार्म / घड़ी
-        if (cmd.contains("अलार्म") || cmd.contains("घड़ी") || cmd.contains("clock") || cmd.contains("alarm")) {
-            speakOut("घड़ी खोल रहा हूँ, सर।");
-            Intent clockIntent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
-            clockIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(clockIntent);
-            return;
-        }
-
-        // 7. कैलकुलेटर
-        if (cmd.contains("कैलकुलेटर") || cmd.contains("calculator") || cmd.contains("हिसाब")) {
-            speakOut("कैलकुलेटर खोल रहा हूँ, सर।");
-            launchAnyAppByName("calculator");
-            return;
-        }
-
-        // 8. सेटिंग्स
+        // 5. सेटिंग्स
         if (cmd.contains("सेटिंग") || cmd.contains("setting")) {
             speakOut("सेटिंग्स खोल रहा हूँ, सर।");
             Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
@@ -170,22 +162,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 9. सोशल ऐप्स
-        if (cmd.contains("युटुब") || cmd.contains("यूट्यूब") || cmd.contains("youtube") || cmd.contains("gana") || cmd.contains("गाने")) {
-            speakOut("यूट्यूब खोल रहा हूँ, सर।");
-            launchPackageOrUrl("com.google.android.youtube", "https://www.youtube.com");
-            return;
-        }
-        if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
-            speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
-            launchPackageOrUrl("com.whatsapp", null);
-            return;
-        }
-        if (cmd.contains("इंस्टाग्राम") || cmd.contains("instagram")) {
-            speakOut("इंस्टाग्राम खोल रहा हूँ, सर।");
-            launchPackageOrUrl("com.instagram.android", null);
-            return;
-        }
+        // 6. कैमरा
         if (cmd.contains("कैमरा") || cmd.contains("camera")) {
             speakOut("कैमरा खोल रहा हूँ, सर।");
             Intent cameraIntent = new Intent("android.media.action.STILL_IMAGE_CAMERA");
@@ -193,58 +170,73 @@ public class MainActivity extends Activity {
             startActivity(cameraIntent);
             return;
         }
-        if (cmd.contains("क्रोम") || cmd.contains("chrome")) {
-            speakOut("गूगल क्रोम खोल रहा हूँ, सर।");
-            launchPackageOrUrl("com.android.chrome", "https://www.google.com");
+
+        // 7. यूट्यूब
+        if (cmd.contains("युटुब") || cmd.contains("यूट्यूब") || cmd.contains("youtube")) {
+            speakOut("यूट्यूब खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.google.android.youtube", "https://www.youtube.com");
             return;
         }
 
-        // 10. बाकी कोई भी ऐप जो फ़ोन में हो
-        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|open|kholo|chalao|app|ऐप|दिखाओ)", "").trim();
-        boolean found = launchAnyAppByName(cleaned);
+        // 8. व्हाट्सएप
+        if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
+            speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.whatsapp", null);
+            return;
+        }
 
-        if (!found) {
-            speakOut(rawCmd + " समझ नहीं आया, सर।");
+        // 9. इंस्टाग्राम
+        if (cmd.contains("इंस्टाग्राम") || cmd.contains("instagram")) {
+            speakOut("इंस्टाग्राम खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.instagram.android", null);
+            return;
+        }
+
+        // 10. पूरे मोबाइल के हर ऐप की डीप सर्च (100% Launchable Apps Scanner)
+        String query = cleanQuery(cmd);
+        String translatedQuery = translateHindiApp(query);
+
+        boolean opened = searchAndLaunchApp(translatedQuery);
+        if (!opened && !query.equals(translatedQuery)) {
+            opened = searchAndLaunchApp(query);
+        }
+
+        // 11. अगर कोई ऐप नहीं है, तो सीधे Google पर सर्च करें (Assistant Feature)
+        if (!opened) {
+            speakOut(rawCmd + " गूगल पर खोज रहा हूँ, सर।");
+            Intent searchIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=" + Uri.encode(rawCmd)));
+            searchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(searchIntent);
         }
     }
 
-    private void toggleFlashlight(boolean status) {
-        try {
-            CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
-            String cameraId = camManager.getCameraIdList()[0];
-            camManager.setTorchMode(cameraId, status);
-            isFlashOn = status;
-        } catch (Exception ignored) {}
+    private String cleanQuery(String input) {
+        return input.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू)", "").trim();
     }
 
-    private boolean launchPackageIfExists(String packageName) {
-        PackageManager pm = getPackageManager();
-        Intent intent = pm.getLaunchIntentForPackage(packageName);
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            return true;
+    private String translateHindiApp(String query) {
+        for (Map.Entry<String, String> entry : HINDI_APP_MAP.entrySet()) {
+            if (query.contains(entry.getKey())) {
+                return entry.getValue();
+            }
         }
-        return false;
+        return query;
     }
 
-    private void launchPackageOrUrl(String packageName, String fallbackUrl) {
-        if (!launchPackageIfExists(packageName) && fallbackUrl != null) {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl)));
-        }
-    }
-
-    private boolean launchAnyAppByName(String query) {
+    private boolean searchAndLaunchApp(String query) {
         if (query.isEmpty()) return false;
         PackageManager pm = getPackageManager();
-        List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
 
-        for (ApplicationInfo appInfo : packages) {
-            String label = pm.getApplicationLabel(appInfo).toString().toLowerCase();
-            String pkg = appInfo.packageName.toLowerCase();
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        List<ResolveInfo> appList = pm.queryIntentActivities(mainIntent, 0);
 
-            if (label.contains(query) || pkg.contains(query)) {
-                Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
+        for (ResolveInfo info : appList) {
+            String label = info.loadLabel(pm).toString().toLowerCase();
+            String pkg = info.activityInfo.packageName.toLowerCase();
+
+            if (label.contains(query) || pkg.contains(query) || query.contains(label)) {
+                Intent launchIntent = pm.getLaunchIntentForPackage(info.activityInfo.packageName);
                 if (launchIntent != null) {
                     speakOut(label + " खोल रहा हूँ, सर।");
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -254,6 +246,25 @@ public class MainActivity extends Activity {
             }
         }
         return false;
+    }
+
+    private void toggleFlashlight(boolean status) {
+        try {
+            CameraManager camManager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+            String cameraId = camManager.getCameraIdList()[0];
+            camManager.setTorchMode(cameraId, status);
+        } catch (Exception ignored) {}
+    }
+
+    private void launchPackageOrUrl(String packageName, String fallbackUrl) {
+        PackageManager pm = getPackageManager();
+        Intent intent = pm.getLaunchIntentForPackage(packageName);
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } else if (fallbackUrl != null) {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl)));
+        }
     }
 
     private void speakOut(String text) {
