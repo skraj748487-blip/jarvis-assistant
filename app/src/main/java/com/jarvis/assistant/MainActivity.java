@@ -105,28 +105,25 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. YouTube Song - Safe Uri.encode
+        // 1. YouTube Song - Clean Uri Search
         if (cmd.contains("गाना") || cmd.contains("song") || cmd.contains("बजाओ") || cmd.contains("चलाओ") || cmd.contains("play")) {
             String songName = cmd.replaceAll("(युटुब ओपन करके|यूट्यूब ओपन करके|युटुब खोल के|यूट्यूब खोल के|यूट्यूब पर|यूट्यूब में|युटुब|यूट्यूब|youtube|गाना बजाओ|गाना चलाओ|गाना लगाओ|गाना|बजाओ|चलाओ|लगाओ|ओपन करके|खोल के|ओपन करो|खोलो|play|song)", "").trim();
             if (songName.isEmpty()) songName = "295";
 
             speakOut(songName + " बजा रहा हूँ, सर।");
 
+            Intent ytIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songName)));
+            ytIntent.setPackage("com.google.android.youtube");
+            ytIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             try {
-                Intent ytIntent = new Intent(Intent.ACTION_VIEW);
-                ytIntent.setData(Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songName)));
-                ytIntent.setPackage("com.google.android.youtube");
-                ytIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(ytIntent);
             } catch (Exception e) {
-                Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songName)));
-                fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(fallback);
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songName))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
             return;
         }
 
-        // 2. Call Dialer Trigger
+        // 2. Call
         if (cmd.contains("कॉल") || cmd.contains("call") || cmd.contains("फोन लगाओ") || cmd.contains("फोन करो")) {
             String name = cmd.replaceAll("(के पास कॉल करो|के पास कॉल लगाओ|को कॉल लगाओ|को कॉल करो|पर कॉल लगाओ|पर कॉल करो|कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call|फोन)", "").trim();
             speakOut((name.isEmpty() ? "कॉल" : name + " को कॉल") + " मिला रहा हूँ, सर।");
@@ -202,7 +199,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 8. Named Apps
+        // 8. Direct Apps (PhonePe, Paytm, Insta, FB, etc.)
         if (cmd.contains("फोन पे") || cmd.contains("phonepe")) { speakOut("फ़ोन पे खोल रहा हूँ।"); launchByPackage("com.phonepe.app"); return; }
         if (cmd.contains("पेटीएम") || cmd.contains("paytm")) { speakOut("पेटीएम खोल रहा हूँ।"); launchByPackage("net.one97.paytm"); return; }
         if (cmd.contains("गूगल पे") || cmd.contains("gpay")) { speakOut("गूगल पे खोल रहा हूँ।"); launchByPackage("com.google.android.apps.nbu.paisa.user"); return; }
@@ -211,7 +208,7 @@ public class MainActivity extends Activity {
         if (cmd.contains("यूट्यूब") || cmd.contains("youtube") || cmd.contains("युटुब")) { speakOut("यूट्यूब खोल रहा हूँ।"); launchByPackage("com.google.android.youtube"); return; }
         if (cmd.contains("टर्मक्स") || cmd.contains("termux")) { speakOut("टर्मक्स खोल रहा हूँ।"); launchByPackage("com.termux"); return; }
 
-        // 9. Universal App Launcher
+        // 9. Phone ke baaki sabhi apps
         String clean = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू)", "").trim();
         if (launchUniversalApp(clean)) return;
 
