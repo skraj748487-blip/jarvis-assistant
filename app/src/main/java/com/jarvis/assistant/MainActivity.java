@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
 
@@ -108,7 +110,7 @@ public class MainActivity extends Activity {
         DIRECT_APP_MAP.put("zapya", "com.dewmobile.kuaiya.play");
         DIRECT_APP_MAP.put("zarchiver", "ru.zdevs.zarchiver");
 
-        // Aliases (Hindi & Phonetic mapping)
+        // Aliases
         ALIAS_MAP.put("फोन पे", "phonepe");
         ALIAS_MAP.put("फोनपे", "phonepe");
         ALIAS_MAP.put("पेटीएम", "paytm");
@@ -177,7 +179,7 @@ public class MainActivity extends Activity {
             @Override public void onBeginningOfSpeech() {}
             @Override public void onRmsChanged(float rmsdB) {}
             @Override public void onBufferReceived(byte[] buffer) {}
-            @Override public void onEndOfSpeech() { statusText.setText("खोल रहा हूँ..."); }
+            @Override public void onEndOfSpeech() { statusText.setText("काम कर रहा हूँ..."); }
             @Override public void onError(int error) { statusText.setText("आवाज़ समझ नहीं आई, दोबारा टैप करें।"); }
 
             @Override
@@ -206,9 +208,78 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. बातचीत
+        // 1. YouTube Deep Action (सर्च और गाना प्ले करना)
+        if (cmd.contains("यूट्यूब") || cmd.contains("युटुब") || cmd.contains("youtube") || cmd.contains("गाना") || cmd.contains("song")) {
+            String query = cmd.replaceAll("(यूट्यूब पर|यूट्यूब में|यूट्यूब|युटुब|youtube par|youtube me|youtube|चलाओ|बजाओ|लगाओ|खोजो|प्ले करो|सर्च करो|का गाना|गाना|song|play)", "").trim();
+            if (!query.isEmpty()) {
+                speakOut("यूट्यूब पर " + query + " चला रहा हूँ, सर।");
+                Intent ytIntent = new Intent(Intent.ACTION_SEARCH);
+                ytIntent.setPackage("com.google.android.youtube");
+                ytIntent.putExtra("query", query);
+                ytIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (isIntentSafe(ytIntent)) {
+                    startActivity(ytIntent);
+                    return;
+                } else {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(query))));
+                    return;
+                }
+            } else {
+                speakOut("यूट्यूब खोल रहा हूँ, सर।");
+                launchByPackage("com.google.android.youtube");
+                return;
+            }
+        }
+
+        // 2. WhatsApp Deep Action (मैसेज शेयर / चैट खोलना)
+        if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
+            if (cmd.contains("मैसेज") || cmd.contains("भेजो") || cmd.contains("लिखो") || cmd.contains("send")) {
+                String msg = cmd.replaceAll("(व्हाट्सएप पर|व्हाट्सएप में|व्हाट्सएप|whatsapp par|whatsapp|मैसेज भेजो|मैसेज करो|मैसेज लिखो|भेजो|लिखो|send)", "").trim();
+                speakOut("व्हाट्सएप मैसेज तैयार कर रहा हूँ, सर।");
+                Intent sendIntent = new Intent(Intent.ACTION_SEND);
+                sendIntent.setType("text/plain");
+                sendIntent.setPackage("com.whatsapp");
+                sendIntent.putExtra(Intent.EXTRA_TEXT, msg.isEmpty() ? "हेलो" : msg);
+                sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (isIntentSafe(sendIntent)) {
+                    startActivity(sendIntent);
+                    return;
+                }
+            }
+            speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
+            launchByPackage("com.whatsapp");
+            return;
+        }
+
+        // 3. Direct Calling Action (फ़ोन नंबर या कॉल)
+        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call")) {
+            Matcher matcher = Pattern.compile("\\d+").matcher(cmd);
+            if (matcher.find()) {
+                String number = matcher.group();
+                speakOut(number + " पर कॉल लगा रहा हूँ, सर।");
+                Intent callIntent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + number));
+                callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (checkSelfPermission(android.Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                    startActivity(callIntent);
+                    return;
+                } else {
+                    Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number));
+                    dialIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(dialIntent);
+                    return;
+                }
+            } else {
+                speakOut("डायलर खोल रहा हूँ, सर।");
+                Intent dialIntent = new Intent(Intent.ACTION_DIAL);
+                dialIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(dialIntent);
+                return;
+            }
+        }
+
+        // 4. बातचीत
         if (cmd.contains("हेलो") || cmd.contains("hello") || cmd.contains("हाय") || cmd.equals("जार्विस")) {
-            speakOut("नमस्ते साहिल सर, बताइए क्या खोलना है?");
+            speakOut("नमस्ते साहिल सर, बताइए क्या हुक्म है?");
             return;
         }
         if (cmd.contains("टाइम") || cmd.contains("समय") || cmd.contains("कितने बजे")) {
@@ -222,7 +293,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 2. टॉर्च
+        // 5. टॉर्च
         if (cmd.contains("टॉर्च") || cmd.contains("फ्लैश") || cmd.contains("torch") || cmd.contains("flashlight")) {
             boolean turnOn = !cmd.contains("बंद") && !cmd.contains("off");
             setFlashlight(turnOn);
@@ -230,25 +301,16 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 3. फ़ोन डायलर
-        if (cmd.contains("फोन") || cmd.contains("फ़ोन") || cmd.contains("phone") || cmd.contains("डायलर") || cmd.contains("कॉल")) {
-            speakOut("फ़ोन डायलर खोल रहा हूँ, सर।");
-            Intent dialIntent = new Intent(Intent.ACTION_DIAL);
-            dialIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(dialIntent);
-            return;
-        }
-
-        // 4. कैमरा
+        // 6. कैमरा
         if (cmd.contains("कैमरा") || cmd.contains("camera")) {
-            speakOut("कैमरा खोल रहा हूँ, सर।");
+            speakOut("कैमरा चालू कर रहा हूँ, सर।");
             Intent cameraIntent = new Intent("android.media.action.STILL_IMAGE_CAMERA");
             cameraIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(cameraIntent);
             return;
         }
 
-        // 5. गैलरी / फोटो
+        // 7. गैलरी
         if (cmd.contains("गैलरी") || cmd.contains("gallery") || cmd.contains("photos") || cmd.contains("फोटो") || cmd.contains("फ़ोटो")) {
             speakOut("गैलरी खोल रहा हूँ, सर।");
             Intent galleryIntent = new Intent(Intent.ACTION_VIEW, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -257,35 +319,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 6. अलार्म / घड़ी
-        if (cmd.contains("अलार्म") || cmd.contains("घड़ी") || cmd.contains("clock") || cmd.contains("alarm")) {
-            speakOut("घड़ी खोल रहा हूँ, सर।");
-            Intent alarmIntent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
-            alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(alarmIntent);
-            return;
-        }
-
-        // 7. मैसेज
-        if (cmd.contains("मैसेज") || cmd.contains("संदेश") || cmd.contains("message") || cmd.contains("sms")) {
-            speakOut("मैसेज खोल रहा हूँ, सर।");
-            Intent msgIntent = new Intent(Intent.ACTION_MAIN);
-            msgIntent.addCategory(Intent.CATEGORY_APP_MESSAGING);
-            msgIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(msgIntent);
-            return;
-        }
-
-        // 8. सेटिंग्स
-        if (cmd.contains("सेटिंग") || cmd.contains("setting")) {
-            speakOut("सेटिंग्स खोल रहा हूँ, सर।");
-            Intent settingsIntent = new Intent(Settings.ACTION_SETTINGS);
-            settingsIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(settingsIntent);
-            return;
-        }
-
-        // 9. डायरेक्ट मैप और अलियास सर्च
+        // 8. डायरेक्ट मैपिंग
         for (Map.Entry<String, String> entry : ALIAS_MAP.entrySet()) {
             if (cmd.contains(entry.getKey())) {
                 String targetKey = entry.getValue();
@@ -295,7 +329,6 @@ public class MainActivity extends Activity {
                 }
             }
         }
-
         for (Map.Entry<String, String> entry : DIRECT_APP_MAP.entrySet()) {
             if (cmd.contains(entry.getKey())) {
                 speakOut(entry.getKey() + " खोल रहा हूँ, सर।");
@@ -303,13 +336,17 @@ public class MainActivity extends Activity {
             }
         }
 
-        // 10. पूरे फ़ोन की यूनिवर्सल सिस्टम ऐप सर्च (100% Launchable Apps)
-        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू|दिखाइए)", "").trim();
+        // 9. यूनिवर्सल ऐप सर्च
+        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू)", "").trim();
         if (launchUniversalApp(cleaned)) {
             return;
         }
 
-        speakOut(rawCmd + " नाम का ऐप इस फ़ोन में नहीं मिला, सर।");
+        speakOut(rawCmd + " समझ नहीं आया, सर।");
+    }
+
+    private boolean isIntentSafe(Intent intent) {
+        return !getPackageManager().queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY).isEmpty();
     }
 
     private boolean launchByPackage(String pkg) {
