@@ -1,14 +1,17 @@
 package com.jarvis.assistant;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.AlarmClock;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.speech.RecognitionListener;
@@ -25,8 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MainActivity extends Activity {
 
@@ -166,6 +167,12 @@ public class MainActivity extends Activity {
         statusText = findViewById(R.id.status_text);
         micButton = findViewById(R.id.mic_btn);
 
+        // परमिशन चेक और रिक्वेस्ट
+        requestPermissions(new String[]{
+                Manifest.permission.CALL_PHONE,
+                Manifest.permission.READ_CONTACTS
+        }, 101);
+
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(new Locale("hi", "IN"));
@@ -208,73 +215,47 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. YouTube Deep Action (सर्च और गाना प्ले करना)
-        if (cmd.contains("यूट्यूब") || cmd.contains("युटुब") || cmd.contains("youtube") || cmd.contains("गाना") || cmd.contains("song")) {
-            String query = cmd.replaceAll("(यूट्यूब पर|यूट्यूब में|यूट्यूब|युटुब|youtube par|youtube me|youtube|चलाओ|बजाओ|लगाओ|खोजो|प्ले करो|सर्च करो|का गाना|गाना|song|play)", "").trim();
-            if (!query.isEmpty()) {
-                speakOut("यूट्यूब पर " + query + " चला रहा हूँ, सर।");
-                Intent ytIntent = new Intent(Intent.ACTION_SEARCH);
+        // 1. YouTube Action (गाना सर्च नहीं, सीधा प्ले करने की कोशिश)
+        if (cmd.contains("गाना") || cmd.contains("song") || cmd.contains("बजाओ") || cmd.contains("चलाओ") || cmd.contains("play")) {
+            if (!cmd.contains("कॉल") && !cmd.contains("मैसेज")) {
+                String songQuery = cmd.replaceAll("(यूट्यूब पर|यूट्यूब में|यूट्यूब|युटुब|youtube par|youtube|गाना बजाओ|गाना चलाओ|गाना लगाओ|गाना|बजाओ|चलाओ|लगाओ|प्ले करो|सर्च करो|play|song)", "").trim();
+                if (songQuery.isEmpty()) songQuery = "new trending hindi songs";
+                speakOut(songQuery + " बजा रहा हूँ, सर।");
+                
+                // YouTube App/Web intent to directly load and play
+                Intent ytIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songQuery)));
                 ytIntent.setPackage("com.google.android.youtube");
-                ytIntent.putExtra("query", query);
                 ytIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 if (isIntentSafe(ytIntent)) {
                     startActivity(ytIntent);
-                    return;
                 } else {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(query))));
-                    return;
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songQuery))));
                 }
-            } else {
-                speakOut("यूट्यूब खोल रहा हूँ, सर।");
-                launchByPackage("com.google.android.youtube");
                 return;
             }
         }
 
-        // 2. WhatsApp Deep Action (मैसेज शेयर / चैट खोलना)
+        // 2. नाम बोलकर सीधे Call लगाना ("अमित को कॉल करो", "कॉल इसके पास करो")
+        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call") || cmd.contains("फोन करो")) {
+            String contactName = cmd.replaceAll("(को कॉल लगाओ|को कॉल करो|पर कॉल लगाओ|पर कॉल करो|कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call lagao|call karo|call)", "").trim();
+            if (!contactName.isEmpty()) {
+                makeCallByName(contactName);
+            } else {
+                speakOut("डायलर खोल रहा हूँ, सर।");
+                startActivity(new Intent(Intent.ACTION_DIAL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            return;
+        }
+
+        // 3. WhatsApp पर नाम और मैसेज भेजना ("अमित को व्हाट्सएप पर मैसेज भेजो मैं आ रहा हूँ")
         if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
-            if (cmd.contains("मैसेज") || cmd.contains("भेजो") || cmd.contains("लिखो") || cmd.contains("send")) {
-                String msg = cmd.replaceAll("(व्हाट्सएप पर|व्हाट्सएप में|व्हाट्सएप|whatsapp par|whatsapp|मैसेज भेजो|मैसेज करो|मैसेज लिखो|भेजो|लिखो|send)", "").trim();
-                speakOut("व्हाट्सएप मैसेज तैयार कर रहा हूँ, सर।");
-                Intent sendIntent = new Intent(Intent.ACTION_SEND);
-                sendIntent.setType("text/plain");
-                sendIntent.setPackage("com.whatsapp");
-                sendIntent.putExtra(Intent.EXTRA_TEXT, msg.isEmpty() ? "हेलो" : msg);
-                sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (isIntentSafe(sendIntent)) {
-                    startActivity(sendIntent);
-                    return;
-                }
+            if (cmd.contains("भेजो") || cmd.contains("करो") || cmd.contains("मैसेज") || cmd.contains("बोल दो")) {
+                handleWhatsAppByName(cmd);
+                return;
             }
             speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
             launchByPackage("com.whatsapp");
             return;
-        }
-
-        // 3. Direct Calling Action (फ़ोन नंबर या कॉल)
-        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call")) {
-            Matcher matcher = Pattern.compile("\\d+").matcher(cmd);
-            if (matcher.find()) {
-                String number = matcher.group();
-                speakOut(number + " पर कॉल लगा रहा हूँ, सर।");
-                Intent callIntent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + number));
-                callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (checkSelfPermission(android.Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-                    startActivity(callIntent);
-                    return;
-                } else {
-                    Intent dialIntent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number));
-                    dialIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    startActivity(dialIntent);
-                    return;
-                }
-            } else {
-                speakOut("डायलर खोल रहा हूँ, सर।");
-                Intent dialIntent = new Intent(Intent.ACTION_DIAL);
-                dialIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(dialIntent);
-                return;
-            }
         }
 
         // 4. बातचीत
@@ -319,7 +300,16 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 8. डायरेक्ट मैपिंग
+        // 8. अलार्म / घड़ी
+        if (cmd.contains("अलार्म") || cmd.contains("घड़ी") || cmd.contains("clock") || cmd.contains("alarm")) {
+            speakOut("घड़ी खोल रहा हूँ, सर।");
+            Intent alarmIntent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
+            alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(alarmIntent);
+            return;
+        }
+
+        // 9. डायरेक्ट मैप्ड ऐप्स (Finance, Shopping, Social, etc.)
         for (Map.Entry<String, String> entry : ALIAS_MAP.entrySet()) {
             if (cmd.contains(entry.getKey())) {
                 String targetKey = entry.getValue();
@@ -336,13 +326,91 @@ public class MainActivity extends Activity {
             }
         }
 
-        // 9. यूनिवर्सल ऐप सर्च
-        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू)", "").trim();
+        // 10. पूरे फ़ोन की यूनिवर्सल ऐप सर्च
+        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू|दिखाइए)", "").trim();
         if (launchUniversalApp(cleaned)) {
             return;
         }
 
         speakOut(rawCmd + " समझ नहीं आया, सर।");
+    }
+
+    private void makeCallByName(String nameQuery) {
+        String number = findContactNumber(nameQuery);
+        if (number != null && !number.isEmpty()) {
+            speakOut(nameQuery + " को कॉल लगा रहा हूँ, सर।");
+            Intent callIntent = new Intent(Intent.ACTION_CALL, Uri.parse("tel:" + number));
+            callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (checkSelfPermission(Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                startActivity(callIntent);
+            } else {
+                startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number)).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+        } else {
+            speakOut(nameQuery + " का नंबर कॉन्टैक्ट लिस्ट में नहीं मिला, सर।");
+            startActivity(new Intent(Intent.ACTION_DIAL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        }
+    }
+
+    private void handleWhatsAppByName(String cmd) {
+        // "अमित को व्हाट्सएप पर मैसेज भेजो मैं आ रहा हूँ" से नाम और मैसेज अलग करना
+        String clean = cmd.replaceAll("(व्हाट्सएप पर|व्हाट्सएप में|व्हाट्सएप|whatsapp par|whatsapp)", "").trim();
+        String contact = "";
+        String message = "";
+
+        if (clean.contains("भेजो") || clean.contains("करो") || clean.contains("मैसेज")) {
+            String[] parts = clean.split("(मैसेज भेजो|मैसेज करो|को मैसेज|भेजो|करो|लिखो)");
+            if (parts.length > 0) contact = parts[0].replace("को", "").trim();
+            if (parts.length > 1) message = parts[1].trim();
+        }
+
+        if (contact.isEmpty()) contact = clean;
+        if (message.isEmpty()) message = "नमस्ते";
+
+        String number = findContactNumber(contact);
+        if (number != null && !number.isEmpty()) {
+            speakOut(contact + " को व्हाट्सएप मैसेज भेज रहा हूँ, सर।");
+            String cleanNumber = number.replaceAll("[^0-9]", "");
+            if (cleanNumber.length() == 10) cleanNumber = "91" + cleanNumber;
+            Intent waIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=" + cleanNumber + "&text=" + Uri.encode(message)));
+            waIntent.setPackage("com.whatsapp");
+            waIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(waIntent);
+        } else {
+            // अगर नंबर न मिले तो सामान्य व्हाट्सएप शेयरिंग खोलें
+            speakOut(contact + " का नंबर नहीं मिला, व्हाट्सएप चैट खोल रहा हूँ।");
+            Intent sendIntent = new Intent(Intent.ACTION_SEND);
+            sendIntent.setType("text/plain");
+            sendIntent.setPackage("com.whatsapp");
+            sendIntent.putExtra(Intent.EXTRA_TEXT, message);
+            sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(sendIntent);
+        }
+    }
+
+    private String findContactNumber(String searchName) {
+        if (checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            return null;
+        }
+        Cursor cursor = getContentResolver().query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
+                null, null, null
+        );
+
+        if (cursor != null) {
+            String lowerSearch = searchName.toLowerCase().trim();
+            while (cursor.moveToNext()) {
+                String name = cursor.getString(0);
+                String num = cursor.getString(1);
+                if (name != null && name.toLowerCase().contains(lowerSearch)) {
+                    cursor.close();
+                    return num;
+                }
+            }
+            cursor.close();
+        }
+        return null;
     }
 
     private boolean isIntentSafe(Intent intent) {
