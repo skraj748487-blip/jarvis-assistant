@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0E17">
+
+    <TextView
+        android:id="@+id/title_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="60dp"
+        android:text="J.A.R.V.I.S."
+        android:textColor="#00E5FF"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
+    <ImageView
+        android:id="@+id/mic_btn"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_centerInParent="true"
+        android:background="@android:drawable/ic_btn_speak_now"
+        android:clickable="true"
+        android:focusable="true" />
+
+    <TextView
+        android:id="@+id/status_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/mic_btn"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="35dp"
+        android:text="टैप करें और बोलें..."
+        android:textColor="#B0BEC5"
+        android:textSize="18sp" />
+
+</RelativeLayout>
