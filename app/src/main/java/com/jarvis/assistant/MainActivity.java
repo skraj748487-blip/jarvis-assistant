@@ -2,6 +2,7 @@ package com.jarvis.assistant;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -41,123 +42,23 @@ public class MainActivity extends Activity {
     private static final Map<String, String> ALIAS_MAP = new HashMap<>();
 
     static {
-        // Finance & UPI
         DIRECT_APP_MAP.put("phonepe", "com.phonepe.app");
         DIRECT_APP_MAP.put("gpay", "com.google.android.apps.nbu.paisa.user");
         DIRECT_APP_MAP.put("paytm", "net.one97.paytm");
-        DIRECT_APP_MAP.put("jiofinance", "com.jio.myjio");
-        DIRECT_APP_MAP.put("snapmint", "com.snapmint.app");
-        DIRECT_APP_MAP.put("razorpay", "com.razorpay.payments.app");
-        DIRECT_APP_MAP.put("khatabook", "com.kyip.khatabook");
-        DIRECT_APP_MAP.put("mpokket", "com.mpokket.app");
-
-        // Entertainment
-        DIRECT_APP_MAP.put("mxplayer", "com.mxtech.videoplayer.ad");
-        DIRECT_APP_MAP.put("youtube", "com.google.android.youtube");
-        DIRECT_APP_MAP.put("playit", "videoplayer.videodownloader.downloader");
-        DIRECT_APP_MAP.put("vidmate", "com.nemo.vidmate");
-        DIRECT_APP_MAP.put("crex", "cricket.scores.live.line");
-        DIRECT_APP_MAP.put("jiohotstar", "in.startv.hotstar");
-        DIRECT_APP_MAP.put("hotstar", "in.startv.hotstar");
-        DIRECT_APP_MAP.put("jiosaavn", "com.jio.media.jiobeats");
-        DIRECT_APP_MAP.put("sonyliv", "com.sonyliv");
-        DIRECT_APP_MAP.put("ytmusic", "com.google.android.apps.youtube.music");
-        DIRECT_APP_MAP.put("googletv", "com.google.android.videos");
-        DIRECT_APP_MAP.put("ytstudio", "com.google.android.apps.youtube.creator");
-
-        // Travel
-        DIRECT_APP_MAP.put("whereismytrain", "com.whereismytrain.android");
-        DIRECT_APP_MAP.put("confirmtkt", "com.confirmtkt.lite");
-        DIRECT_APP_MAP.put("maps", "com.google.android.apps.maps");
-        DIRECT_APP_MAP.put("railone", "com.cris.cfind");
-        DIRECT_APP_MAP.put("flightradar24", "com.flightradar24free");
-        DIRECT_APP_MAP.put("irctc", "cris.org.in.prs.ima");
-        DIRECT_APP_MAP.put("railmadad", "com.cris.railmadad");
-        DIRECT_APP_MAP.put("uber", "com.ubercab");
-        DIRECT_APP_MAP.put("rapido", "com.rapido.passenger");
-
-        // Shopping & Food
-        DIRECT_APP_MAP.put("flipkart", "com.flipkart.android");
-        DIRECT_APP_MAP.put("amazon", "in.amazon.mShop.android.shopping");
-        DIRECT_APP_MAP.put("blinkit", "com.grofers.customerapp");
-        DIRECT_APP_MAP.put("zomato", "com.application.zomato");
-        DIRECT_APP_MAP.put("bigbasket", "com.bigbasket.mobileapp");
-        DIRECT_APP_MAP.put("swiggy", "in.swiggy.android");
-        DIRECT_APP_MAP.put("olx", "com.olx.southasia");
-        DIRECT_APP_MAP.put("cashify", "in.cashify");
-
-        // Social & Messaging
         DIRECT_APP_MAP.put("whatsapp", "com.whatsapp");
         DIRECT_APP_MAP.put("instagram", "com.instagram.android");
         DIRECT_APP_MAP.put("facebook", "com.facebook.katana");
-        DIRECT_APP_MAP.put("telegram", "org.telegram.messenger");
-        DIRECT_APP_MAP.put("snapchat", "com.snapchat.android");
-        DIRECT_APP_MAP.put("gmail", "com.google.android.gm");
-        DIRECT_APP_MAP.put("x", "com.twitter.android");
-        DIRECT_APP_MAP.put("twitter", "com.twitter.android");
-        DIRECT_APP_MAP.put("discord", "com.discord");
-        DIRECT_APP_MAP.put("imo", "com.imo.android.imoim");
-        DIRECT_APP_MAP.put("messenger", "com.facebook.orca");
-
-        // Tools & Daily Apps
+        DIRECT_APP_MAP.put("youtube", "com.google.android.youtube");
+        DIRECT_APP_MAP.put("mxplayer", "com.mxtech.videoplayer.ad");
         DIRECT_APP_MAP.put("termux", "com.termux");
-        DIRECT_APP_MAP.put("vn", "com.frontrow.vlog");
-        DIRECT_APP_MAP.put("gemini", "com.google.android.apps.bard");
-        DIRECT_APP_MAP.put("chatgpt", "com.openai.chatgpt");
-        DIRECT_APP_MAP.put("playstore", "com.android.vending");
-        DIRECT_APP_MAP.put("chrome", "com.android.chrome");
-        DIRECT_APP_MAP.put("myjio", "com.jio.myjio");
-        DIRECT_APP_MAP.put("calculator", "com.google.android.calculator");
-        DIRECT_APP_MAP.put("clock", "com.google.android.deskclock");
-        DIRECT_APP_MAP.put("zapya", "com.dewmobile.kuaiya.play");
-        DIRECT_APP_MAP.put("zarchiver", "ru.zdevs.zarchiver");
 
-        // Aliases
         ALIAS_MAP.put("फोन पे", "phonepe");
-        ALIAS_MAP.put("फोनपे", "phonepe");
         ALIAS_MAP.put("पेटीएम", "paytm");
         ALIAS_MAP.put("गूगल पे", "gpay");
-        ALIAS_MAP.put("गूगलपे", "gpay");
-        ALIAS_MAP.put("जीपे", "gpay");
         ALIAS_MAP.put("व्हाट्सएप", "whatsapp");
         ALIAS_MAP.put("इंस्टाग्राम", "instagram");
-        ALIAS_MAP.put("इंस्टा", "instagram");
         ALIAS_MAP.put("फेसबुक", "facebook");
         ALIAS_MAP.put("यूट्यूब", "youtube");
-        ALIAS_MAP.put("युटुब", "youtube");
-        ALIAS_MAP.put("हॉटस्टार", "jiohotstar");
-        ALIAS_MAP.put("जियो हॉटस्टार", "jiohotstar");
-        ALIAS_MAP.put("जियो सावन", "jiosaavn");
-        ALIAS_MAP.put("सोनी लिव", "sonyliv");
-        ALIAS_MAP.put("एमएक्स प्लेयर", "mxplayer");
-        ALIAS_MAP.put("एमएक्स", "mxplayer");
-        ALIAS_MAP.put("अमेजन", "amazon");
-        ALIAS_MAP.put("अमेज़न", "amazon");
-        ALIAS_MAP.put("फ्लिपकार्ट", "flipkart");
-        ALIAS_MAP.put("जोमैटो", "zomato");
-        ALIAS_MAP.put("ज़ोमैटो", "zomato");
-        ALIAS_MAP.put("स्विगी", "swiggy");
-        ALIAS_MAP.put("ब्लिंकिट", "blinkit");
-        ALIAS_MAP.put("रैपिडो", "rapido");
-        ALIAS_MAP.put("उबर", "uber");
-        ALIAS_MAP.put("ट्रेन", "whereismytrain");
-        ALIAS_MAP.put("कन्फर्म टिकट", "confirmtkt");
-        ALIAS_MAP.put("मैप", "maps");
-        ALIAS_MAP.put("नक्शा", "maps");
-        ALIAS_MAP.put("टेलीग्राम", "telegram");
-        ALIAS_MAP.put("स्नैपचैट", "snapchat");
-        ALIAS_MAP.put("टर्मक्स", "termux");
-        ALIAS_MAP.put("कैलकुलेटर", "calculator");
-        ALIAS_MAP.put("घड़ी", "clock");
-        ALIAS_MAP.put("अलार्म", "clock");
-        ALIAS_MAP.put("कैमरा", "camera");
-        ALIAS_MAP.put("गैलरी", "gallery");
-        ALIAS_MAP.put("फोटो", "gallery");
-        ALIAS_MAP.put("फ़ाइल", "file");
-        ALIAS_MAP.put("फाइल", "file");
-        ALIAS_MAP.put("मैसेज", "message");
-        ALIAS_MAP.put("कांटेक्ट", "contact");
-        ALIAS_MAP.put("सेटिंग", "setting");
     }
 
     @Override
@@ -217,41 +118,10 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. YouTube Song
-        if (cmd.contains("गाना") || cmd.contains("song") || cmd.contains("बजाओ") || cmd.contains("चलाओ") || cmd.contains("play")) {
-            if (!cmd.contains("कॉल") && !cmd.contains("मैसेज")) {
-                String songQuery = cmd.replaceAll("(यूट्यूब पर|यूट्यूब में|यूट्यूब|युटुब|youtube par|youtube|गाना बजाओ|गाना चलाओ|गाना लगाओ|गाना|बजाओ|चलाओ|लगाओ|प्ले करो|सर्च करो|play|song)", "").trim();
-                if (songQuery.isEmpty()) songQuery = "hindi songs";
-                speakOut(songQuery + " बजा रहा हूँ, सर।");
-
-                Intent ytIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songQuery)));
-                ytIntent.setPackage("com.google.android.youtube");
-                ytIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                if (isIntentSafe(ytIntent)) {
-                    startActivity(ytIntent);
-                } else {
-                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songQuery))));
-                }
-                return;
-            }
-        }
-
-        // 2. Call by Name
-        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call") || cmd.contains("फोन करो")) {
-            String contactName = cmd.replaceAll("(को कॉल लगाओ|को कॉल करो|पर कॉल लगाओ|पर कॉल करो|कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call lagao|call karo|call)", "").trim();
-            if (!contactName.isEmpty()) {
-                makeCallByName(contactName);
-            } else {
-                speakOut("डायलर खोल रहा हूँ, सर।");
-                startActivity(new Intent(Intent.ACTION_DIAL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            }
-            return;
-        }
-
-        // 3. WhatsApp by Name & Message
+        // 1. WhatsApp पर मैसेज भेजने का स्मार्ट पार्सर
         if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
-            if (cmd.contains("भेजो") || cmd.contains("करो") || cmd.contains("मैसेज") || cmd.contains("बोल दो")) {
-                handleWhatsAppByName(cmd);
+            if (cmd.contains("मैसेज") || cmd.contains("भेजो") || cmd.contains("लिखो") || cmd.contains("करो")) {
+                sendWhatsAppSmart(cmd);
                 return;
             }
             speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
@@ -259,84 +129,106 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 4. Conversation
-        if (cmd.contains("हेलो") || cmd.contains("hello") || cmd.contains("हाय") || cmd.equals("जार्विस")) {
-            speakOut("नमस्ते साहिल सर, बताइए क्या हुक्म है?");
-            return;
-        }
-        if (cmd.contains("टाइम") || cmd.contains("समय") || cmd.contains("कितने बजे")) {
-            String time = new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
-            speakOut("अभी समय हुआ है " + time);
-            return;
-        }
-        if (cmd.contains("तारीख") || cmd.contains("डेट")) {
-            String date = new SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(new Date());
-            speakOut("आज की तारीख है " + date);
+        // 2. सीधा गाना प्ले करना (Auto-Play)
+        if (cmd.contains("गाना") || cmd.contains("song") || cmd.contains("बजाओ") || cmd.contains("चलाओ") || cmd.contains("play")) {
+            String song = cmd.replaceAll("(यूट्यूब पर|यूट्यूब में|यूट्यूब|युटुब|youtube|गाना बजाओ|गाना चलाओ|गाना लगाओ|गाना|बजाओ|चलाओ|लगाओ|प्ले करो|सर्च करो|play|song)", "").trim();
+            if (song.isEmpty()) song = "bollywood hits";
+            speakOut(song + " बजा रहा हूँ, सर।");
+
+            Intent playIntent = new Intent(MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH);
+            playIntent.putExtra(SearchManager.QUERY, song);
+            playIntent.putExtra(MediaStore.EXTRA_MEDIA_FOCUS, "vnd.android.cursor.item/*");
+            playIntent.setPackage("com.google.android.youtube");
+            playIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            if (isIntentSafe(playIntent)) {
+                startActivity(playIntent);
+            } else {
+                Intent ytWeb = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(song)));
+                ytWeb.setPackage("com.google.android.youtube");
+                ytWeb.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(ytWeb);
+            }
             return;
         }
 
-        // 5. Torch
-        if (cmd.contains("टॉर्च") || cmd.contains("फ्लैश") || cmd.contains("torch") || cmd.contains("flashlight")) {
+        // 3. नाम बोलकर सीधा कॉल लगाना
+        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call") || cmd.contains("फोन करो")) {
+            String target = cmd;
+            if (target.contains("को")) {
+                target = target.substring(0, target.indexOf("को"));
+            }
+            target = target.replaceAll("(कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call|फोन)", "").trim();
+
+            if (!target.isEmpty()) {
+                callPersonByName(target);
+            } else {
+                startActivity(new Intent(Intent.ACTION_DIAL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            return;
+        }
+
+        // 4. टॉर्च
+        if (cmd.contains("टॉर्च") || cmd.contains("फ्लैश") || cmd.contains("torch")) {
             boolean turnOn = !cmd.contains("बंद") && !cmd.contains("off");
             setFlashlight(turnOn);
             speakOut(turnOn ? "टॉर्च चालू कर दी गई है।" : "टॉर्च बंद कर दी गई है।");
             return;
         }
 
-        // 6. Camera
-        if (cmd.contains("कैमरा") || cmd.contains("camera")) {
-            speakOut("कैमरा चालू कर रहा हूँ, सर।");
-            Intent cameraIntent = new Intent("android.media.action.STILL_IMAGE_CAMERA");
-            cameraIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(cameraIntent);
-            return;
-        }
-
-        // 7. Gallery
-        if (cmd.contains("गैलरी") || cmd.contains("gallery") || cmd.contains("photos") || cmd.contains("फोटो") || cmd.contains("फ़ोटो")) {
-            speakOut("गैलरी खोल रहा हूँ, सर।");
-            Intent galleryIntent = new Intent(Intent.ACTION_VIEW, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-            galleryIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(galleryIntent);
-            return;
-        }
-
-        // 8. Alarm
-        if (cmd.contains("अलार्म") || cmd.contains("घड़ी") || cmd.contains("clock") || cmd.contains("alarm")) {
-            speakOut("घड़ी खोल रहा हूँ, सर।");
-            Intent alarmIntent = new Intent(AlarmClock.ACTION_SHOW_ALARMS);
-            alarmIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(alarmIntent);
-            return;
-        }
-
-        // 9. Direct Apps
+        // 5. बाकी ऐप्स
         for (Map.Entry<String, String> entry : ALIAS_MAP.entrySet()) {
             if (cmd.contains(entry.getKey())) {
-                String targetKey = entry.getValue();
-                if (DIRECT_APP_MAP.containsKey(targetKey)) {
-                    speakOut(entry.getKey() + " खोल रहा हूँ, सर।");
-                    if (launchByPackage(DIRECT_APP_MAP.get(targetKey))) return;
-                }
-            }
-        }
-        for (Map.Entry<String, String> entry : DIRECT_APP_MAP.entrySet()) {
-            if (cmd.contains(entry.getKey())) {
                 speakOut(entry.getKey() + " खोल रहा हूँ, सर।");
-                if (launchByPackage(entry.getValue())) return;
+                launchByPackage(DIRECT_APP_MAP.get(entry.getValue()));
+                return;
             }
         }
 
-        // 10. Universal App Search
-        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू|दिखाइए)", "").trim();
-        if (launchUniversalApp(cleaned)) {
-            return;
-        }
+        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू)", "").trim();
+        if (launchUniversalApp(cleaned)) return;
 
         speakOut(rawCmd + " समझ नहीं आया, सर।");
     }
 
-    private void makeCallByName(String nameQuery) {
+    private void sendWhatsAppSmart(String cmd) {
+        String name = "";
+        String msg = "";
+
+        // "व्हाट्सएप खोल के मुजरा आलम को हेलो मैसेज करो" से नाम और मैसेज निकालना
+        String clean = cmd.replaceAll("(व्हाट्सएप खोल के|व्हाट्सएप पर|व्हाट्सएप में|व्हाट्सएप|whatsapp kholo|whatsapp)", "").trim();
+
+        if (clean.contains("को")) {
+            int koIndex = clean.indexOf("को");
+            name = clean.substring(0, koIndex).trim();
+            msg = clean.substring(koIndex + 2).replaceAll("(मैसेज करो|मैसेज भेजो|भेजो|करो|लिखो|मैसेज)", "").trim();
+        } else {
+            msg = clean.replaceAll("(मैसेज करो|मैसेज भेजो|भेजो|करो|लिखो|मैसेज)", "").trim();
+        }
+
+        if (msg.isEmpty()) msg = "हेलो";
+
+        String number = findContactNumber(name);
+        if (number != null && !number.isEmpty()) {
+            speakOut(name + " को मैसेज भेज रहा हूँ, सर।");
+            String cleanNum = number.replaceAll("[^0-9]", "");
+            if (cleanNum.length() == 10) cleanNum = "91" + cleanNum;
+            Intent wa = new Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=" + cleanNum + "&text=" + Uri.encode(msg)));
+            wa.setPackage("com.whatsapp");
+            wa.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(wa);
+        } else {
+            speakOut(name + " का नंबर नहीं मिला, व्हाट्सएप चैट खोल रहा हूँ।");
+            Intent sendIntent = new Intent(Intent.ACTION_SEND);
+            sendIntent.setType("text/plain");
+            sendIntent.setPackage("com.whatsapp");
+            sendIntent.putExtra(Intent.EXTRA_TEXT, msg);
+            sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(sendIntent);
+        }
+    }
+
+    private void callPersonByName(String nameQuery) {
         String number = findContactNumber(nameQuery);
         if (number != null && !number.isEmpty()) {
             speakOut(nameQuery + " को कॉल लगा रहा हूँ, सर।");
@@ -348,69 +240,61 @@ public class MainActivity extends Activity {
                 startActivity(new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + number)).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
         } else {
-            speakOut(nameQuery + " का नंबर कॉन्टैक्ट लिस्ट में नहीं मिला, सर।");
+            speakOut(nameQuery + " का नंबर नहीं मिला, सर।");
             startActivity(new Intent(Intent.ACTION_DIAL).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         }
     }
 
-    private void handleWhatsAppByName(String cmd) {
-        String clean = cmd.replaceAll("(व्हाट्सएप पर|व्हाट्सएप में|व्हाट्सएप|whatsapp par|whatsapp)", "").trim();
-        String contact = "";
-        String message = "";
-
-        if (clean.contains("भेजो") || clean.contains("करो") || clean.contains("मैसेज")) {
-            String[] parts = clean.split("(मैसेज भेजो|मैसेज करो|को मैसेज|भेजो|करो|लिखो)");
-            if (parts.length > 0) contact = parts[0].replace("को", "").trim();
-            if (parts.length > 1) message = parts[1].trim();
-        }
-
-        if (contact.isEmpty()) contact = clean;
-        if (message.isEmpty()) message = "नमस्ते";
-
-        String number = findContactNumber(contact);
-        if (number != null && !number.isEmpty()) {
-            speakOut(contact + " को व्हाट्सएप मैसेज भेज रहा हूँ, सर।");
-            String cleanNumber = number.replaceAll("[^0-9]", "");
-            if (cleanNumber.length() == 10) cleanNumber = "91" + cleanNumber;
-            Intent waIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=" + cleanNumber + "&text=" + Uri.encode(message)));
-            waIntent.setPackage("com.whatsapp");
-            waIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(waIntent);
-        } else {
-            speakOut(contact + " का नंबर नहीं मिला, व्हाट्सएप खोल रहा हूँ।");
-            Intent sendIntent = new Intent(Intent.ACTION_SEND);
-            sendIntent.setType("text/plain");
-            sendIntent.setPackage("com.whatsapp");
-            sendIntent.putExtra(Intent.EXTRA_TEXT, message);
-            sendIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(sendIntent);
-        }
-    }
-
     private String findContactNumber(String searchName) {
+        if (searchName == null || searchName.trim().isEmpty()) return null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
             return null;
         }
-        try {
-            Cursor cursor = getContentResolver().query(
+
+        String search = searchName.toLowerCase().trim();
+        Cursor cursor = getContentResolver().query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
+                null, null, null
+        );
+
+        if (cursor != null) {
+            // First pass: exact substring match
+            while (cursor.moveToNext()) {
+                String name = cursor.getString(0);
+                String num = cursor.getString(1);
+                if (name != null && name.toLowerCase().contains(search)) {
+                    cursor.close();
+                    return num;
+                }
+            }
+            cursor.close();
+        }
+
+        // Second pass: match individual first/last words
+        String[] words = search.split("\\s+");
+        if (words.length > 0) {
+            cursor = getContentResolver().query(
                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
                     new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
                     null, null, null
             );
-
             if (cursor != null) {
-                String lowerSearch = searchName.toLowerCase().trim();
                 while (cursor.moveToNext()) {
                     String name = cursor.getString(0);
                     String num = cursor.getString(1);
-                    if (name != null && name.toLowerCase().contains(lowerSearch)) {
-                        cursor.close();
-                        return num;
+                    if (name != null) {
+                        for (String w : words) {
+                            if (w.length() > 2 && name.toLowerCase().contains(w)) {
+                                cursor.close();
+                                return num;
+                            }
+                        }
                     }
                 }
                 cursor.close();
             }
-        } catch (Exception ignored) {}
+        }
         return null;
     }
 
