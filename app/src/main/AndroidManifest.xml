@@ -1,15 +1,21 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.jarvis.assistant">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:icon="@android:drawable/sym_def_app_icon"
-        android:label="JARVIS"
-        android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+        android:label="J.A.R.V.I.S"
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         <activity
             android:name=".MainActivity"
             android:exported="true">
