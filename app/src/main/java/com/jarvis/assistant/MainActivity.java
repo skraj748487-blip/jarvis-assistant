@@ -17,7 +17,6 @@ import android.speech.tts.TextToSpeech;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,7 +35,6 @@ public class MainActivity extends Activity {
     private static final Map<String, String> DIRECT_APP_MAP = new HashMap<>();
 
     static {
-        // Daily UPI, Social, Travel & Tools (Sab kuch pehle jaisa safe hai)
         DIRECT_APP_MAP.put("phonepe", "com.phonepe.app");
         DIRECT_APP_MAP.put("paytm", "net.one97.paytm");
         DIRECT_APP_MAP.put("gpay", "com.google.android.apps.nbu.paisa.user");
@@ -107,7 +105,7 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. YouTube Auto Song Play (Pehla focus - Perfect direct launch)
+        // 1. YouTube Song - Safe Uri.encode
         if (cmd.contains("गाना") || cmd.contains("song") || cmd.contains("बजाओ") || cmd.contains("चलाओ") || cmd.contains("play")) {
             String songName = cmd.replaceAll("(युटुब ओपन करके|यूट्यूब ओपन करके|युटुब खोल के|यूट्यूब खोल के|यूट्यूब पर|यूट्यूब में|युटुब|यूट्यूब|youtube|गाना बजाओ|गाना चलाओ|गाना लगाओ|गाना|बजाओ|चलाओ|लगाओ|ओपन करके|खोल के|ओपन करो|खोलो|play|song)", "").trim();
             if (songName.isEmpty()) songName = "295";
@@ -116,19 +114,19 @@ public class MainActivity extends Activity {
 
             try {
                 Intent ytIntent = new Intent(Intent.ACTION_VIEW);
-                ytIntent.setData(Uri.parse("https://www.youtube.com/results?search_query=" + URLEncoder.encode(songName, "UTF-8")));
+                ytIntent.setData(Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songName)));
                 ytIntent.setPackage("com.google.android.youtube");
                 ytIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(ytIntent);
             } catch (Exception e) {
-                Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + URLEncoder.encode(songName, "UTF-8")));
+                Intent fallback = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(songName)));
                 fallback.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(fallback);
             }
             return;
         }
 
-        // 2. Call trigger (Dialer backup sahit)
+        // 2. Call Dialer Trigger
         if (cmd.contains("कॉल") || cmd.contains("call") || cmd.contains("फोन लगाओ") || cmd.contains("फोन करो")) {
             String name = cmd.replaceAll("(के पास कॉल करो|के पास कॉल लगाओ|को कॉल लगाओ|को कॉल करो|पर कॉल लगाओ|पर कॉल करो|कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call|फोन)", "").trim();
             speakOut((name.isEmpty() ? "कॉल" : name + " को कॉल") + " मिला रहा हूँ, सर।");
@@ -165,7 +163,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 4. Torch / Flashlight
+        // 4. Torch
         if (cmd.contains("टॉर्च") || cmd.contains("फ्लैश") || cmd.contains("torch")) {
             boolean turnOn = !cmd.contains("बंद") && !cmd.contains("off");
             setFlashlight(turnOn);
@@ -185,7 +183,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 6. Alarm / Ghadi
+        // 6. Alarm
         if (cmd.contains("अलार्म") || cmd.contains("घड़ी") || cmd.contains("clock")) {
             speakOut("घड़ी खोल रहा हूँ।");
             startActivity(new Intent(AlarmClock.ACTION_SHOW_ALARMS).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
@@ -204,7 +202,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 8. Named Apps (PhonePe, Paytm, GPay, Insta, FB etc.)
+        // 8. Named Apps
         if (cmd.contains("फोन पे") || cmd.contains("phonepe")) { speakOut("फ़ोन पे खोल रहा हूँ।"); launchByPackage("com.phonepe.app"); return; }
         if (cmd.contains("पेटीएम") || cmd.contains("paytm")) { speakOut("पेटीएम खोल रहा हूँ।"); launchByPackage("net.one97.paytm"); return; }
         if (cmd.contains("गूगल पे") || cmd.contains("gpay")) { speakOut("गूगल पे खोल रहा हूँ।"); launchByPackage("com.google.android.apps.nbu.paisa.user"); return; }
@@ -213,7 +211,7 @@ public class MainActivity extends Activity {
         if (cmd.contains("यूट्यूब") || cmd.contains("youtube") || cmd.contains("युटुब")) { speakOut("यूट्यूब खोल रहा हूँ।"); launchByPackage("com.google.android.youtube"); return; }
         if (cmd.contains("टर्मक्स") || cmd.contains("termux")) { speakOut("टर्मक्स खोल रहा हूँ।"); launchByPackage("com.termux"); return; }
 
-        // 9. Universal App Launcher (Bache huye saare apps ke liye)
+        // 9. Universal App Launcher
         String clean = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|लगाओ|open|kholo|chalao|app|ऐप|दिखाओ|चालू)", "").trim();
         if (launchUniversalApp(clean)) return;
 
