@@ -2,7 +2,6 @@ package com.jarvis.assistant;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -23,6 +22,7 @@ import android.speech.tts.TextToSpeech;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -67,6 +67,7 @@ public class MainActivity extends Activity {
         statusText = findViewById(R.id.status_text);
         micButton = findViewById(R.id.mic_btn);
 
+        // सभी जरूरी परमिशन मांगें
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(new String[]{
                     Manifest.permission.CALL_PHONE,
@@ -117,19 +118,16 @@ public class MainActivity extends Activity {
         statusText.setText("\"" + rawCmd + "\"");
         String cmd = rawCmd.toLowerCase().trim();
 
-        // 1. YouTube गाना (Official Search Intent - Direct YouTube Play)
+        // 1. YouTube Auto Song Play (295, अरिजीत, सिद्धू आदि)
         if (cmd.contains("गाना") || cmd.contains("song") || cmd.contains("बजाओ") || cmd.contains("चलाओ") || cmd.contains("play")) {
             String song = cmd.replaceAll("(युटुब ओपन करके|यूट्यूब ओपन करके|युटुब खोल के|यूट्यूब खोल के|यूट्यूब पर|यूट्यूब में|युटुब|यूट्यूब|youtube|गाना बजाओ|गाना चलाओ|गाना लगाओ|गाना|बजाओ|चलाओ|लगाओ|ओपन करके|खोल के|ओपन करो|खोलो|play|song)", "").trim();
-            if (song.isEmpty()) song = "new hindi song";
+            if (song.isEmpty()) song = "trending song";
 
             speakOut(song + " बजा रहा हूँ, सर।");
-
-            Intent ytIntent = new Intent(Intent.ACTION_SEARCH);
-            ytIntent.setPackage("com.google.android.youtube");
-            ytIntent.putExtra("query", song);
-            ytIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
             try {
+                Intent ytIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + URLEncoder.encode(song, "UTF-8")));
+                ytIntent.setPackage("com.google.android.youtube");
+                ytIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(ytIntent);
             } catch (Exception e) {
                 Intent webYt = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(song)));
@@ -139,24 +137,27 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // 2. WhatsApp Message (Direct Contact Search + Send)
+        // 2. Call by Name ("तौसीफ आलम के पास कॉल करो", "आलम को कॉल लगाओ")
+        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call") || cmd.contains("फोन करो")) {
+            String name = cmd.replaceAll("(के पास कॉल करो|के पास कॉल लगाओ|को कॉल लगाओ|को कॉल करो|पर कॉल लगाओ|पर कॉल करो|कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call|फोन)", "").trim();
+            if (name.contains("के पास")) {
+                name = name.replace("के पास", "").trim();
+            }
+            if (name.contains("को")) {
+                name = name.replace("को", "").trim();
+            }
+            makeCall(name);
+            return;
+        }
+
+        // 3. WhatsApp Message
         if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
-            if (cmd.contains("मैसेज") || cmd.contains("भेजो") || cmd.contains("करो") || cmd.contains("लिखो")) {
+            if (cmd.contains("मैसेज") || cmd.contains("भेजो") || cmd.contains("लिखो") || cmd.contains("करो")) {
                 sendWhatsApp(cmd);
                 return;
             }
             speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
             launchByPackage("com.whatsapp");
-            return;
-        }
-
-        // 3. Phone Call by Name or Number
-        if (cmd.contains("कॉल") || cmd.contains("फोन लगाओ") || cmd.contains("call") || cmd.contains("फोन करो")) {
-            String name = cmd.replaceAll("(को कॉल लगाओ|को कॉल करो|पर कॉल लगाओ|पर कॉल करो|कॉल लगाओ|कॉल करो|कॉल|फोन लगाओ|फोन करो|call|फोन)", "").trim();
-            if (name.contains("को")) {
-                name = name.substring(0, name.indexOf("को")).trim();
-            }
-            makeCall(name);
             return;
         }
 
@@ -218,7 +219,11 @@ public class MainActivity extends Activity {
         String name = "";
         String msg = "नमस्ते";
 
-        if (clean.contains("को")) {
+        if (clean.contains("के पास")) {
+            int idx = clean.indexOf("के पास");
+            name = clean.substring(0, idx).trim();
+            msg = clean.substring(idx + 6).replaceAll("(मैसेज करो|मैसेज भेजो|भेजो|करो|लिखो|मैसेज)", "").trim();
+        } else if (clean.contains("को")) {
             int idx = clean.indexOf("को");
             name = clean.substring(0, idx).trim();
             msg = clean.substring(idx + 2).replaceAll("(मैसेज करो|मैसेज भेजो|भेजो|करो|लिखो|मैसेज)", "").trim();
@@ -233,7 +238,7 @@ public class MainActivity extends Activity {
             speakOut(name + " के व्हाट्सएप पर मैसेज भेज रहा हूँ।");
             String cleanNum = number.replaceAll("[^0-9]", "");
             if (cleanNum.length() == 10) cleanNum = "91" + cleanNum;
-            
+
             Intent wa = new Intent(Intent.ACTION_VIEW);
             wa.setData(Uri.parse("https://api.whatsapp.com/send?phone=" + cleanNum + "&text=" + Uri.encode(msg)));
             wa.setPackage("com.whatsapp");
@@ -276,9 +281,36 @@ public class MainActivity extends Activity {
                 while (cursor.moveToNext()) {
                     String name = cursor.getString(0);
                     String num = cursor.getString(1);
-                    if (name != null && (name.toLowerCase().contains(query) || query.contains(name.toLowerCase()))) {
-                        cursor.close();
-                        return num;
+                    if (name != null) {
+                        String lowerName = name.toLowerCase();
+                        if (lowerName.contains(query) || query.contains(lowerName)) {
+                            cursor.close();
+                            return num;
+                        }
+                    }
+                }
+                cursor.close();
+            }
+
+            // अगर पूरा नाम न मिले तो नाम के अलग-अलग शब्दों (जैसे सिर्फ "तौसीफ" या सिर्फ "आलम") से मिलाएँ
+            String[] words = query.split("\\s+");
+            cursor = getContentResolver().query(
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                    new String[]{ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER},
+                    null, null, null
+            );
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(0);
+                    String num = cursor.getString(1);
+                    if (name != null) {
+                        String lowerName = name.toLowerCase();
+                        for (String w : words) {
+                            if (w.length() >= 3 && lowerName.contains(w)) {
+                                cursor.close();
+                                return num;
+                            }
+                        }
                     }
                 }
                 cursor.close();
