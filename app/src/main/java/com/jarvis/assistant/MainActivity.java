@@ -3,13 +3,9 @@ package com.jarvis.assistant;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.hardware.camera2.CameraManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.provider.AlarmClock;
-import android.provider.MediaStore;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -20,14 +16,12 @@ import android.widget.TextView;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends Activity {
 
     private TextView statusText;
-    private ImageView micButton;
+    private ImageView micBtn;
     private SpeechRecognizer speechRecognizer;
     private TextToSpeech textToSpeech;
     private CameraManager cameraManager;
@@ -39,8 +33,8 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        statusText = findViewById(R.id.statusText);
-        micButton = findViewById(R.id.micButton);
+        statusText = findViewById(R.id.status_text);
+        micBtn = findViewById(R.id.mic_btn);
 
         textToSpeech = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
@@ -62,7 +56,7 @@ public class MainActivity extends Activity {
             @Override public void onEndOfSpeech() {}
             @Override
             public void onError(int error) {
-                statusText.setText("Press mic and try again");
+                statusText.setText("Tap and speak...");
             }
             @Override
             public void onResults(Bundle results) {
@@ -75,7 +69,7 @@ public class MainActivity extends Activity {
             @Override public void onEvent(int eventType, Bundle params) {}
         });
 
-        micButton.setOnClickListener(v -> startListening());
+        micBtn.setOnClickListener(v -> startListening());
     }
 
     private void startListening() {
