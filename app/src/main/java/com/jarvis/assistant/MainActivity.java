@@ -10,10 +10,8 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,29 +32,27 @@ public class MainActivity extends Activity {
         statusText = findViewById(R.id.status_text);
         micButton = findViewById(R.id.mic_btn);
 
-        // TTS Engine Init
         tts = new TextToSpeech(this, status -> {
             if (status == TextToSpeech.SUCCESS) {
                 tts.setLanguage(new Locale("hi", "IN"));
-                speakOut("जार्विस ऑनलाइन है, सर। क्या हुक्म है?");
+                speakOut("जार्विस तैयार है, सर।");
             }
         });
 
-        // Speech Recognizer Init
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
             @Override public void onReadyForSpeech(Bundle params) { statusText.setText("सुन रहा हूँ..."); }
             @Override public void onBeginningOfSpeech() {}
             @Override public void onRmsChanged(float rmsdB) {}
             @Override public void onBufferReceived(byte[] buffer) {}
-            @Override public void onEndOfSpeech() { statusText.setText("प्रोसेसिंग..."); }
+            @Override public void onEndOfSpeech() { statusText.setText("खोज रहा हूँ..."); }
             @Override public void onError(int error) { statusText.setText("आवाज़ समझ नहीं आई, दोबारा टैप करें।"); }
 
             @Override
             public void onResults(Bundle results) {
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
-                    handleVoiceCommand(matches.get(0).toLowerCase());
+                    handleVoiceCommand(matches.get(0));
                 }
             }
 
@@ -74,42 +70,74 @@ public class MainActivity extends Activity {
         speechRecognizer.startListening(intent);
     }
 
-    private void handleVoiceCommand(String cmd) {
-        statusText.setText("\"" + cmd + "\"");
+    private void handleVoiceCommand(String rawCmd) {
+        statusText.setText("\"" + rawCmd + "\"");
+        String cmd = rawCmd.toLowerCase();
 
-        // 1. YouTube & Music
-        if (cmd.contains("gana") || cmd.contains("song") || cmd.contains("bajao") || cmd.contains("youtube")) {
-            String query = cmd.replaceAll("(gana|song|bajao|chalao|play|youtube|kholo|open)", "").trim();
-            speakOut("यूट्यूब चला रहा हूँ, सर।");
-            Intent ytIntent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/results?search_query=" + Uri.encode(query)));
-            startActivity(ytIntent);
+        // 1. YouTube Direct Trigger (Hindi & English words)
+        if (cmd.contains("युटुब") || cmd.contains("यूट्यूब") || cmd.contains("youtube") || cmd.contains("gana") || cmd.contains("गाने")) {
+            speakOut("यूट्यूब खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.google.android.youtube", "https://www.youtube.com");
             return;
         }
 
-        // 2. Camera Trigger
-        if (cmd.contains("camera") || cmd.contains("photo")) {
-            speakOut("कैमरा खोल दिया गया है, सर।");
-            Intent camIntent = new Intent("android.media.action.STILL_IMAGE_CAMERA");
-            startActivity(camIntent);
+        // 2. WhatsApp Direct Trigger
+        if (cmd.contains("व्हाट्सएप") || cmd.contains("whatsapp")) {
+            speakOut("व्हाट्सएप खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.whatsapp", null);
             return;
         }
 
-        // 3. Siri-Style Universal App Launcher (Queries phone launcher directly)
-        String targetApp = cmd.replaceAll("(kholo|open karo|open|chalao|app)", "").trim();
-        boolean found = launchAnyAppByName(targetApp);
+        // 3. Instagram Direct Trigger
+        if (cmd.contains("इंस्टाग्राम") || cmd.contains("instagram") || cmd.contains("insta")) {
+            speakOut("इंस्टाग्राम खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.instagram.android", null);
+            return;
+        }
+
+        // 4. Camera Trigger
+        if (cmd.contains("कैमरा") || cmd.contains("camera") || cmd.contains("photo")) {
+            speakOut("कैमरा खोल रहा हूँ, सर।");
+            startActivity(new Intent("android.media.action.STILL_IMAGE_CAMERA"));
+            return;
+        }
+
+        // 5. Chrome / Browser Trigger
+        if (cmd.contains("क्रोम") || cmd.contains("chrome") || cmd.contains("browser")) {
+            speakOut("गूगल क्रोम खोल रहा हूँ, सर।");
+            launchPackageOrUrl("com.android.chrome", "https://www.google.com");
+            return;
+        }
+
+        // 6. Generic App Search by Name
+        String cleaned = cmd.replaceAll("(ओपन|खोलो|चलाओ|खोलें|करो|open|kholo|chalao|app|ऐप)", "").trim();
+        boolean found = launchAnyAppByName(cleaned);
 
         if (!found) {
-            speakOut(targetApp + " ऐप फ़ोन में नहीं मिला, सर।");
+            speakOut(rawCmd + " समझ नहीं आया, सर।");
         }
     }
 
-    private boolean launchAnyAppByName(String appName) {
+    private void launchPackageOrUrl(String packageName, String fallbackUrl) {
+        PackageManager pm = getPackageManager();
+        Intent intent = pm.getLaunchIntentForPackage(packageName);
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } else if (fallbackUrl != null) {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(fallbackUrl)));
+        } else {
+            speakOut("यह ऐप इस फ़ोन में इंस्टॉल नहीं है, सर।");
+        }
+    }
+
+    private boolean launchAnyAppByName(String query) {
         PackageManager pm = getPackageManager();
         List<ApplicationInfo> packages = pm.getInstalledApplications(PackageManager.GET_META_DATA);
 
         for (ApplicationInfo appInfo : packages) {
             String label = pm.getApplicationLabel(appInfo).toString().toLowerCase();
-            if (label.contains(appName) || appName.contains(label)) {
+            if (!query.isEmpty() && (label.contains(query) || query.contains(label))) {
                 Intent launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName);
                 if (launchIntent != null) {
                     speakOut(label + " खोल रहा हूँ, सर।");
